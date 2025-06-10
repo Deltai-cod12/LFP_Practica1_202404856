@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokémon Selector</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><button onclick="location.href='/'">Home</button></li>
+        <form id="formErrores" action="/errores" style="display:inline;">
+          <input type="hidden" name="erroresJSON" id="erroresJSON" value='<%= JSON.stringify(errors || []) %>'>
+          <button type="submit">Error Report</button>
+        </form>
+
+        <li>
+          <select id="archivoMenu">
+            <option disabled selected>Archivo</option>
+            <option value="limpiar">Limpiar Editor</option>
+            <option value="cargar">Cargar Archivo</option>
+            <option value="guardar">Guardar Archivo</option>
+          </select>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <form action="/analyze" method="POST">
+      <section id="editor-container">
+        <textarea id="editor" name="txtArea" placeholder="Escribe o carga tu archivo .pklfp aquí..."><%= codigo || '' %></textarea>
+        <button type="submit">Analizar</button>
+      </section>
+    </form>
+
+    <section id="tablaTokens-container">
+      <h2>Tabla de Tokens</h2>
+      <table id="tablaTokens">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fila</th>
+            <th>Columna</th>
+            <th>Lexema</th>
+            <th>Token</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (tokens && tokens.length > 0) { %>
+            <% tokens.forEach((token, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= token.fila %></td>
+                <td><%= token.columna %></td>
+                <td><%= token.lexema %></td>
+                <td><%= token.token %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+
+      </table>
+    </section>
+  </main>
+
+  <input type="file" id="fileInput" accept=".pklfp" style="display:none">
+
+  <script src="/js/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Reporte de Errores Léxicos</title>
+    <link rel="stylesheet" href="/css/estilos.css" />
+</head>
+<body>
+    <header>
+    <nav>
+        <ul>
+        <li><button onclick="location.href='/'">Home</button></li>
+        <li><button onclick="location.href='/error-report'">Error Report</button></li>
+        <li>
+            <select id="archivoMenu" disabled>
+            <option disabled selected>Archivo</option>
+            </select>
+        </li>
+        </ul>
+    </nav>
+    </header>
+
+    <main>
+    <section id="reporteErrores-container">
+        <h2>Reporte de Errores Léxicos</h2>
+
+        <% if (erroresLexicos && erroresLexicos.length > 0) { %>
+        <table id="tablaErrores">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Fila</th>
+                <th>Columna</th>
+                <th>Lexema</th>
+                <th>Descripción</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% erroresLexicos.forEach((error, index) => { %>
+                <tr>
+                <td><%= index + 1 %></td>
+                <td><%= error.fila %></td>
+                <td><%= error.columna %></td>
+                <td><%= error.lexema %></td>
+                <td><%= error.token %></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+        <% } else { %>
+        <p>No se encontraron errores léxicos.</p>
+        <% } %>
+    </section>
+    </main>
+</body>
+</html>
