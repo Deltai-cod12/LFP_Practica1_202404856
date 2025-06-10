@@ -10,7 +10,7 @@
     <nav>
       <ul>
         <li><button onclick="location.href='/'">Home</button></li>
-        <form id="formErrores" action="/errores" style="display:inline;">
+        <form id="formErrores" action="/error-report" style="display:inline;">
           <input type="hidden" name="erroresJSON" id="erroresJSON" value='<%= JSON.stringify(errors || []) %>'>
           <button type="submit">Error Report</button>
         </form>

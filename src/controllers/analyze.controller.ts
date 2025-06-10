@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
-import { LexicalAnalyzer } from '../Analyzer/LexicalAnalyzer'; // Ajusta si está en otro path
+import { LexicalAnalyzer } from '../Analyzer/LexicalAnalyzer'; 
+import { Token } from '../Analyzer/Token'; 
+
+let lastLexicalErrors: { fila: number; columna: number; lexema: string; token: string }[] = [];
 
 export const home = (_req: Request, res: Response) => {
     res.render('pages/index', {
         tokens: [],
-        errors: [],
+        errors: [], 
         codigo: '',
         contador: 0
     });
@@ -15,7 +18,15 @@ export const analyze = (req: Request, res: Response) => {
 
     const lexicalAnalyzer = new LexicalAnalyzer();
     const tokenList = lexicalAnalyzer.scanner(input);
-    const errorList = lexicalAnalyzer.getErrorList();
+    const rawErrorList = lexicalAnalyzer.getErrorList(); 
+
+    
+    lastLexicalErrors = rawErrorList.map((errorToken: Token) => ({
+        fila: errorToken.getRow(),
+        columna: errorToken.getColumn(),
+        lexema: errorToken.getLexeme(),
+        token: errorToken.getTypeTokenString() 
+    }));
 
     const tokensToSend = tokenList.map(token => ({
         fila: token.getRow(),
@@ -26,8 +37,14 @@ export const analyze = (req: Request, res: Response) => {
 
     res.render('pages/index', {
         tokens: tokensToSend,
-        errors: errorList,
+        errors: rawErrorList,
         codigo: input,
         contador: tokensToSend.length
+    });
+};
+
+export const errorReport = (_req: Request, res: Response) => {
+    res.render('pages/errores', {
+        erroresLexicos: lastLexicalErrors 
     });
 };
