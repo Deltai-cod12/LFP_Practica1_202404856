@@ -7,7 +7,10 @@ export interface Pokemon {
     salud: number;
     ataque: number;
     defensa: number;
+    ivs?: number;
+    sprite?: string;
 }
+
 
 export interface Jugador {
     nombre: string;
@@ -16,21 +19,19 @@ export interface Jugador {
 
 export class PokemonParser {
     private tokens: Token[];
-    private playerData: Jugador = {
-        nombre: "",
-        pokemones: []
-    };
+    private jugadores: Jugador[] = [];
+    private jugadorActual: Jugador | null = null;
 
     constructor(tokens: Token[]) {
         this.tokens = tokens;
     }
 
-    public parse(): Jugador | null {
-        for (let i = 0; i < this.tokens.length; i++) {
+    public parse(): Jugador[] {
+        let i = 0;
+        while (i < this.tokens.length) {
             const token = this.tokens[i];
 
-            // Detectar la cabecera: Jugador: "Jugador1" {
-            console.log(token)
+            // Detectar cabecera del jugador
             if (
                 token.getType() === Type.RESERVED_WORD &&
                 token.getLexeme().toLowerCase() === "jugador" &&
@@ -38,15 +39,23 @@ export class PokemonParser {
                 this.tokens[i + 2]?.getType() === Type.STRING &&
                 this.tokens[i + 3]?.getType() === Type.BRACE_OPEN
             ) {
+                // Si ya hay un jugador actual, agregarlo a la lista antes de crear uno nuevo
+                if (this.jugadorActual) {
+                    this.jugadores.push(this.jugadorActual);
+                }
+
                 const nombreToken = this.tokens[i + 2];
-                this.playerData.nombre = this.cleanString(nombreToken.getLexeme());
-                console.log(this.playerData.nombre)
-                i += 3; // Avanzamos después del {
+                this.jugadorActual = {
+                    nombre: this.cleanString(nombreToken.getLexeme()),
+                    pokemones: []
+                };
+                i += 4; // Saltar hasta el {
                 continue;
             }
 
-            // Detectar bloque de un Pokémon
+            // Detectar definición de Pokémon (solo si hay jugador actual)
             if (
+                this.jugadorActual &&
                 token.getType() === Type.STRING &&
                 this.tokens[i + 1]?.getType() === Type.BRACKET_OPEN &&
                 this.tokens[i + 2]?.getType() === Type.RESERVED_WORD &&
@@ -57,14 +66,15 @@ export class PokemonParser {
                 const nombrePokemon = this.cleanString(token.getLexeme());
                 const tipo = this.tokens[i + 2].getLexeme().toLowerCase();
 
-                const stats: any = {
+                const stats: Record<string, number | null> = {
                     salud: null,
                     ataque: null,
                     defensa: null
                 };
 
-                i += 6; // Avanzamos al interior del bloque de stats
+                i += 6; // Posicionarse dentro del bloque de estadísticas
 
+                // Leer las estadísticas
                 while (i < this.tokens.length) {
                     if (
                         this.tokens[i]?.getType() === Type.BRACKET_OPEN &&
@@ -82,19 +92,21 @@ export class PokemonParser {
                         }
 
                         i += 6;
-                    } else if (this.tokens[i]?.getType() === Type.PAR_CLOSE) {
-                        // Fin del bloque del Pokémon
-                        i++;
-                        break;
-                    } else {
-                        console.warn(" Estructura inesperada dentro del bloque del Pokémon:", this.tokens[i]);
+                        continue;
+                    }
+
+                    if (this.tokens[i]?.getType() === Type.PAR_CLOSE) {
+                        i++; // Salir del bloque del Pokémon
                         break;
                     }
+
+                    console.warn("Estructura inesperada dentro del bloque del Pokémon:", this.tokens[i]);
+                    break;
                 }
 
-                // Verificación mínima de stats
+                // Verificar que los stats estén completos antes de agregar
                 if (stats.salud !== null && stats.ataque !== null && stats.defensa !== null) {
-                    this.playerData.pokemones.push({
+                    this.jugadorActual.pokemones.push({
                         nombre: nombrePokemon,
                         tipo,
                         salud: stats.salud,
@@ -102,22 +114,56 @@ export class PokemonParser {
                         defensa: stats.defensa
                     });
                 } else {
-                    console.warn(`Pokémon "${nombrePokemon}" con stats incompletos.`);
+                    console.warn(`Pokémon "${nombrePokemon}" con estadísticas incompletas. No será agregado.`);
                 }
 
                 continue;
             }
+
+            i++; // Incrementar manualmente
         }
 
-        // Validación final
-        if (this.playerData.nombre && this.playerData.pokemones.length > 0) {
-            return this.playerData;
-        } else {
-            return null;
+        // Agregar el último jugador encontrado si existe
+        if (this.jugadorActual) {
+            this.jugadores.push(this.jugadorActual);
+            this.jugadorActual = null;
         }
+
+        return this.jugadores;
     }
 
     private cleanString(cadena: string): string {
         return cadena.replace(/^"|"$/g, "");
+    }
+
+    // Calcuo de los IVS
+
+    public calcularIVs(pokemones: Pokemon[]): (Pokemon & { iv: number })[] {
+        return pokemones.map(pokemon => {
+            const iv = ((pokemon.salud + pokemon.ataque + pokemon.defensa) / 45) * 100;
+            return { ...pokemon, iv };
+        });
+    }
+
+    //Los 6 mejores pokemons por IVS
+    public seleccionarMejoresSeis(pokemones: (Pokemon & { iv: number })[]): (Pokemon & { iv: number })[] {
+        const mejoresPorTipo = new Map<string, (Pokemon & { iv: number })>();
+
+        for (const pkm of pokemones) {
+            const tipo = pkm.tipo.toLowerCase();
+            if (!mejoresPorTipo.has(tipo)) {
+                mejoresPorTipo.set(tipo, pkm);
+            } else {
+                const existente = mejoresPorTipo.get(tipo)!;
+                if (pkm.iv > existente.iv) {
+                    mejoresPorTipo.set(tipo, pkm);
+                }
+            }
+        }
+
+        // Ordenar por IV descendente 
+        return Array.from(mejoresPorTipo.values())
+            .sort((a, b) => b.iv - a.iv)
+            .slice(0, 6);
     }
 }

@@ -63,35 +63,47 @@
       </table>
     </section>
 
-    <% if (player) { %>
-      <section id="jugadorPokemon-container">
-        <h2>Jugador: <%= player.nombre %></h2>
-        <h3>Pokémon Registrados:</h3>
-        <table id="tablaPokemons">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Salud</th>
-              <th>Ataque</th>
-              <th>Defensa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% player.pokemones.forEach((pokemon, index) => { %>
+    <% if (jugadores && jugadores.length > 0) { %>
+      <% jugadores.forEach((player, playerIndex) => { %>
+        <section class="jugadorPokemon-container">
+          <h2>Jugador <%= playerIndex + 1 %>: <%= player.nombre %></h2>
+          <h3>Pokémon Registrados:</h3>
+          <table class="tablaPokemons">
+            <thead>
               <tr>
-                <td><%= index + 1 %></td>
-                <td><%= pokemon.nombre %></td>
-                <td><%= pokemon.tipo %></td>
-                <td><%= pokemon.salud %></td>
-                <td><%= pokemon.ataque %></td>
-                <td><%= pokemon.defensa %></td>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Salud</th>
+                <th>Ataque</th>
+                <th>Defensa</th>
+                <th>Sprite</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              <% player.pokemones.forEach((pokemon, index) => { %>
+                <tr>
+                  <td><%= index + 1 %></td>
+                  <td><%= pokemon.nombre %></td>
+                  <td><%= pokemon.tipo %></td>
+                  <td><%= pokemon.salud %></td>
+                  <td><%= pokemon.ataque %></td>
+                  <td><%= pokemon.defensa %></td>
+                  <td>
+                    <% if (pokemon.sprite) { %>
+                      <img src="<%= pokemon.sprite %>" alt="sprite de <%= pokemon.nombre %>" width="64" height="64">
+                    <% } else { %>
+                      No disponible
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </section>
+      <% }) %>
+    <% } else { %>
+      <p>No hay jugadores para mostrar.</p>
     <% } %>
 
   </main>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { LexicalAnalyzer } from '../Analyzer/LexicalAnalyzer'; 
 import { Token } from '../Analyzer/Token'; 
 import { PokemonParser, Jugador } from '../Analyzer/PokemonParser';
+import { obtenerSprite } from '../utils/pokeapi'; 
 
 let lastLexicalErrors: { fila: number; columna: number; lexema: string; token: string }[] = [];
 
@@ -11,19 +12,17 @@ export const home = (_req: Request, res: Response) => {
         errors: [],
         codigo: '',
         contador: 0,
-        player: null 
+        jugadores: []  // cambiar player a jugadores (array)
     });
 };
 
-export const analyze = (req: Request, res: Response) => {
+export const analyze = async (req: Request, res: Response) => {
     const input = req.body.txtArea || '';
 
-    // Analizador léxico
     const lexicalAnalyzer = new LexicalAnalyzer();
     const tokenList = lexicalAnalyzer.scanner(input);
     const rawErrorList = lexicalAnalyzer.getErrorList();
 
-    // Mapear errores léxicos para la vista
     lastLexicalErrors = rawErrorList.map((errorToken: Token) => ({
         fila: errorToken.getRow(),
         columna: errorToken.getColumn(),
@@ -31,7 +30,6 @@ export const analyze = (req: Request, res: Response) => {
         token: errorToken.getTypeTokenString()
     }));
 
-    // Mapear tokens para la vista
     const tokensToSend = tokenList.map(token => ({
         fila: token.getRow(),
         columna: token.getColumn(),
@@ -39,28 +37,61 @@ export const analyze = (req: Request, res: Response) => {
         token: token.getTypeTokenString()
     }));
 
-    let player: Jugador | null = null;
+    let jugadores: Jugador[] = [];
 
-    // Solo parsear si NO hay errores léxicos
-    console.log(lastLexicalErrors)
+    function calcularIV(pokemon: { salud: number, ataque: number, defensa: number }) {
+        return ((pokemon.salud + pokemon.ataque + pokemon.defensa) / 45) * 100;
+    }
+
     if (lastLexicalErrors.length === 0) {
         try {
             const parser = new PokemonParser(tokenList);
-            player = parser.parse(); // Devuelve Jugador | null
+            jugadores = parser.parse();
+
+            jugadores = await Promise.all(jugadores.map(async jugador => {
+                const pokemonesConIV = await Promise.all(jugador.pokemones.map(async p => ({
+                    ...p,
+                    iv: calcularIV(p),
+                    sprite: await obtenerSprite(p.nombre.toLowerCase()) || ''
+                })));
+
+                pokemonesConIV.sort((a, b) => b.iv - a.iv);
+
+                const seleccionados: typeof pokemonesConIV = [];
+                const tiposUsados = new Set<string>();
+
+                for (const p of pokemonesConIV) {
+                    if (!tiposUsados.has(p.tipo)) {
+                        seleccionados.push(p);
+                        tiposUsados.add(p.tipo);
+                    }
+                    if (seleccionados.length === 6) break;
+                }
+
+                return {
+                    nombre: jugador.nombre,
+                    pokemones: seleccionados
+                };
+            }));
+
         } catch (e) {
             console.error('Error al parsear:', e);
         }
     }
-    console.log(player)
-    // Renderizar la vista con tokens, errores, código y jugador parseado
+
+    console.log(JSON.stringify(jugadores, null, 2));
+
     res.render('pages/index', {
         tokens: tokensToSend,
         errors: rawErrorList,
         codigo: input,
         contador: tokensToSend.length,
-        player 
+        jugadores
     });
 };
+
+
+
 
 export const errorReport = (_req: Request, res: Response) => {
     res.render('pages/errores', {

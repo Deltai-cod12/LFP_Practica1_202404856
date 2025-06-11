@@ -176,9 +176,8 @@ class LexicalAnalyzer {
                 this.addToken(Type.ASSIGN, this.auxChar, this.row, this.column - this.auxChar.length);
                 this.clean(); i--; break;
 
-            // -------------------
+            
             // Palabras reservadas
-            // -------------------
 
             // Jugador
             case 100: if (char == 'u') { this.addCharacter(char); this.state = 101; } else { this.lexError(i); } break;
