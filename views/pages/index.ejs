@@ -60,9 +60,40 @@
             <% }) %>
           <% } %>
         </tbody>
-
       </table>
     </section>
+
+    <% if (player) { %>
+      <section id="jugadorPokemon-container">
+        <h2>Jugador: <%= player.nombre %></h2>
+        <h3>Pokémon Registrados:</h3>
+        <table id="tablaPokemons">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Salud</th>
+              <th>Ataque</th>
+              <th>Defensa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% player.pokemones.forEach((pokemon, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= pokemon.nombre %></td>
+                <td><%= pokemon.tipo %></td>
+                <td><%= pokemon.salud %></td>
+                <td><%= pokemon.ataque %></td>
+                <td><%= pokemon.defensa %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </section>
+    <% } %>
+
   </main>
 
   <input type="file" id="fileInput" accept=".pklfp" style="display:none">

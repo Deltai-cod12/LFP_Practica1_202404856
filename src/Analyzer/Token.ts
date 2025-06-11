@@ -42,6 +42,10 @@ class Token {
         return this.lexeme;
     }
 
+    getType(): Type {
+        return this.typeToken;
+    }
+
     getTypeTokenString(): string {
         return this.typeTokenString;
     }
